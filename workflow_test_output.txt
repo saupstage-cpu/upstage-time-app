@@ -1,0 +1,9 @@
+time-in 200 {'attendance_id': 5, 'job': 'ATEEZ Tour', 'location': 'Melbourne VIC', 'message': 'TIME IN RECORDED', 'time': '10:58 AM'}
+start-break 200 {'message': 'BREAK STARTED', 'time': '10:58 AM'}
+end-break 200 {'duration_minutes': 0, 'message': 'BREAK ENDED'}
+worklog 200 {'message': 'Work log saved.'}
+time-out 200 {'break_minutes': 0, 'job': 'ATEEZ Tour', 'message': 'TIME OUT RECORDED', 'worked_today': 0}
+submit-timesheet 200 {'message': 'Timesheet submitted for approval.'}
+approve-attendance 200 {'message': 'Attendance approved.'}
+approve-timesheet 200 {'message': 'Timesheet approved.'}
+xero-sync 200 {'message': 'Xero sync package prepared.', 'status': 'ready_for_credentials'}
