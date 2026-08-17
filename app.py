@@ -386,6 +386,10 @@ def breaks_for_shift(attendance_id):
     return BreakEntry.query.filter_by(attendance_id=attendance_id).order_by(BreakEntry.start_at.asc()).all()
 
 
+def assigned_job_ids(user_id):
+    return [row.job_id for row in JobAssignment.query.filter_by(user_id=user_id).all()]
+
+
 def recalc_shift(att):
     settings = CompanySettings.query.first()
     brs = breaks_for_shift(att.id)
@@ -658,14 +662,38 @@ def admin_dashboard():
 @login_required(role="admin")
 def admin_employees_page():
     rows = User.query.filter_by(role="employee").order_by(User.full_name.asc()).all()
-    return render_template("admin_employees.html", rows=rows)
+    jobs = Job.query.order_by(Job.name.asc()).all()
+    assignment_counts = {row.id: len(assigned_job_ids(row.id)) for row in rows}
+    return render_template("admin_employees.html", rows=rows, jobs=jobs, assignment_counts=assignment_counts)
+
+
+@app.route("/admin/employees/<int:user_id>")
+@login_required(role="admin")
+def admin_employee_detail_page(user_id):
+    employee = User.query.filter_by(id=user_id, role="employee").first_or_404()
+    jobs = Job.query.order_by(Job.name.asc()).all()
+    assigned_ids = assigned_job_ids(employee.id)
+    recent_rows = Attendance.query.filter_by(user_id=employee.id).order_by(Attendance.time_in_at.desc()).limit(20).all()
+    return render_template("admin_employee_detail.html", employee=employee, jobs=jobs, assigned_ids=assigned_ids, recent_rows=recent_rows)
 
 
 @app.route("/admin/jobs")
 @login_required(role="admin")
 def admin_jobs_page():
     rows = Job.query.order_by(Job.start_date.desc()).all()
-    return render_template("admin_jobs.html", rows=rows)
+    employees = User.query.filter_by(role="employee").order_by(User.full_name.asc()).all()
+    assignment_counts = {row.id: JobAssignment.query.filter_by(job_id=row.id).count() for row in rows}
+    return render_template("admin_jobs.html", rows=rows, employees=employees, assignment_counts=assignment_counts)
+
+
+@app.route("/admin/jobs/<int:job_id>")
+@login_required(role="admin")
+def admin_job_detail_page(job_id):
+    job = Job.query.get_or_404(job_id)
+    employees = User.query.filter_by(role="employee").order_by(User.full_name.asc()).all()
+    assigned_ids = [row.user_id for row in JobAssignment.query.filter_by(job_id=job.id).all()]
+    recent_rows = Attendance.query.filter_by(job_id=job.id).order_by(Attendance.time_in_at.desc()).limit(20).all()
+    return render_template("admin_job_detail.html", job=job, employees=employees, assigned_ids=assigned_ids, recent_rows=recent_rows, users=User)
 
 
 @app.route("/admin/attendance")
@@ -979,12 +1007,162 @@ def api_admin_dashboard():
 def api_admin_create_employee():
     user = current_user()
     payload = request.get_json() or {}
-    employee = User(full_name=payload["full_name"], email=payload["email"].lower(), role="employee", department=payload.get("department", "Operations"), pay_category=payload.get("pay_category", "Ordinary Hours"))
+    email = payload.get("email", "").strip().lower()
+    if not email or User.query.filter_by(email=email).first():
+        return jsonify({"error": "A unique employee email is required."}), 400
+    employee = User(
+        full_name=payload.get("full_name", "New Employee"),
+        email=email,
+        role="employee",
+        department=payload.get("department", "Operations"),
+        pay_category=payload.get("pay_category", "Ordinary Hours"),
+        xero_employee_id=payload.get("xero_employee_id") or None,
+    )
     employee.set_password(payload.get("password", "Pass123!"))
     db.session.add(employee)
     db.session.commit()
-    log_audit(user.id, "create_employee", "user", employee.id, {"employee": employee.full_name})
+    for job_id in payload.get("job_ids", []):
+        if Job.query.get(job_id):
+            db.session.add(JobAssignment(user_id=employee.id, job_id=job_id))
+    db.session.commit()
+    log_audit(user.id, "create_employee", "user", employee.id, {"employee": employee.full_name, "job_ids": payload.get("job_ids", [])})
     return jsonify({"message": "Employee created.", "id": employee.id})
+
+
+@app.route("/api/admin/employees/<int:user_id>/update", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_update_employee(user_id):
+    admin = current_user()
+    employee = User.query.filter_by(id=user_id, role="employee").first_or_404()
+    payload = request.get_json() or {}
+    original = {"full_name": employee.full_name, "email": employee.email, "department": employee.department, "pay_category": employee.pay_category, "xero_employee_id": employee.xero_employee_id, "active": employee.active}
+    new_email = payload.get("email", employee.email).strip().lower()
+    existing = User.query.filter(User.email == new_email, User.id != employee.id).first()
+    if existing:
+        return jsonify({"error": "Email already in use by another account."}), 400
+    employee.full_name = payload.get("full_name", employee.full_name)
+    employee.email = new_email
+    employee.department = payload.get("department", employee.department)
+    employee.pay_category = payload.get("pay_category", employee.pay_category)
+    employee.xero_employee_id = payload.get("xero_employee_id", employee.xero_employee_id)
+    if "active" in payload:
+        employee.active = bool(payload.get("active"))
+    db.session.commit()
+    log_audit(admin.id, "update_employee", "user", employee.id, {"original": original, "new": {"full_name": employee.full_name, "email": employee.email, "department": employee.department, "pay_category": employee.pay_category, "xero_employee_id": employee.xero_employee_id, "active": employee.active}})
+    return jsonify({"message": "Employee updated."})
+
+
+@app.route("/api/admin/employees/<int:user_id>/reset-password", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_reset_password(user_id):
+    admin = current_user()
+    employee = User.query.filter_by(id=user_id, role="employee").first_or_404()
+    payload = request.get_json() or {}
+    new_password = payload.get("password", "Pass123!")
+    employee.set_password(new_password)
+    db.session.commit()
+    log_audit(admin.id, "reset_employee_password", "user", employee.id, {"employee": employee.full_name})
+    return jsonify({"message": f"Password reset for {employee.full_name}."})
+
+
+@app.route("/api/admin/employees/<int:user_id>/toggle-active", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_toggle_employee(user_id):
+    admin = current_user()
+    employee = User.query.filter_by(id=user_id, role="employee").first_or_404()
+    employee.active = not employee.active
+    db.session.commit()
+    log_audit(admin.id, "toggle_employee_active", "user", employee.id, {"active": employee.active})
+    return jsonify({"message": f"Employee {'enabled' if employee.active else 'disabled'}.", "active": employee.active})
+
+
+@app.route("/api/admin/employees/<int:user_id>/assignments", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_employee_assignments(user_id):
+    admin = current_user()
+    employee = User.query.filter_by(id=user_id, role="employee").first_or_404()
+    payload = request.get_json() or {}
+    job_ids = [int(x) for x in payload.get("job_ids", [])]
+    JobAssignment.query.filter_by(user_id=employee.id).delete()
+    for job_id in job_ids:
+        if Job.query.get(job_id):
+            db.session.add(JobAssignment(user_id=employee.id, job_id=job_id))
+    db.session.commit()
+    log_audit(admin.id, "assign_employee_jobs", "user", employee.id, {"job_ids": job_ids})
+    return jsonify({"message": "Assigned jobs updated."})
+
+
+@app.route("/api/admin/jobs", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_create_job():
+    admin = current_user()
+    payload = request.get_json() or {}
+    if Job.query.filter_by(job_number=payload.get("job_number", "").strip()).first():
+        return jsonify({"error": "Job number must be unique."}), 400
+    job = Job(
+        job_number=payload.get("job_number", ""),
+        name=payload.get("name", "Untitled Job"),
+        client=payload.get("client", "Unknown Client"),
+        venue=payload.get("venue", "TBC"),
+        location=payload.get("location", "TBC"),
+        start_date=datetime.fromisoformat(payload.get("start_date")).date(),
+        end_date=datetime.fromisoformat(payload.get("end_date")).date(),
+        manager_name=payload.get("manager_name", "TBC"),
+        status=payload.get("status", "Active"),
+        notes=payload.get("notes", ""),
+    )
+    db.session.add(job)
+    db.session.commit()
+    for user_id in payload.get("employee_ids", []):
+        if User.query.filter_by(id=user_id, role="employee").first():
+            db.session.add(JobAssignment(user_id=user_id, job_id=job.id))
+    db.session.commit()
+    log_audit(admin.id, "create_job", "job", job.id, {"job_number": job.job_number, "employee_ids": payload.get("employee_ids", [])})
+    return jsonify({"message": "Job created.", "id": job.id})
+
+
+@app.route("/api/admin/jobs/<int:job_id>/update", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_update_job(job_id):
+    admin = current_user()
+    job = Job.query.get_or_404(job_id)
+    payload = request.get_json() or {}
+    original = {"job_number": job.job_number, "name": job.name, "client": job.client, "venue": job.venue, "location": job.location, "status": job.status}
+    new_job_number = payload.get("job_number", job.job_number).strip()
+    existing = Job.query.filter(Job.job_number == new_job_number, Job.id != job.id).first()
+    if existing:
+        return jsonify({"error": "Job number already exists."}), 400
+    job.job_number = new_job_number
+    job.name = payload.get("name", job.name)
+    job.client = payload.get("client", job.client)
+    job.venue = payload.get("venue", job.venue)
+    job.location = payload.get("location", job.location)
+    if payload.get("start_date"):
+        job.start_date = datetime.fromisoformat(payload.get("start_date")).date()
+    if payload.get("end_date"):
+        job.end_date = datetime.fromisoformat(payload.get("end_date")).date()
+    job.manager_name = payload.get("manager_name", job.manager_name)
+    job.status = payload.get("status", job.status)
+    job.notes = payload.get("notes", job.notes)
+    db.session.commit()
+    log_audit(admin.id, "update_job", "job", job.id, {"original": original, "new": {"job_number": job.job_number, "name": job.name, "client": job.client, "venue": job.venue, "location": job.location, "status": job.status}})
+    return jsonify({"message": "Job updated."})
+
+
+@app.route("/api/admin/jobs/<int:job_id>/assignments", methods=["POST"])
+@api_login_required(role="admin")
+def api_admin_job_assignments(job_id):
+    admin = current_user()
+    job = Job.query.get_or_404(job_id)
+    payload = request.get_json() or {}
+    employee_ids = [int(x) for x in payload.get("employee_ids", [])]
+    JobAssignment.query.filter_by(job_id=job.id).delete()
+    for user_id in employee_ids:
+        if User.query.filter_by(id=user_id, role="employee").first():
+            db.session.add(JobAssignment(user_id=user_id, job_id=job.id))
+    db.session.commit()
+    log_audit(admin.id, "assign_job_employees", "job", job.id, {"employee_ids": employee_ids})
+    return jsonify({"message": "Assigned employees updated."})
 
 
 @app.route("/api/admin/attendance/<int:attendance_id>/approve", methods=["POST"])

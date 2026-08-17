@@ -28,9 +28,11 @@
           <a href="{{ url_for('employee_history_page') }}">History</a>
           <a href="{{ url_for('employee_timesheet_page') }}">Timesheet</a>
         {% else %}
-          <a href="{{ url_for('admin_dashboard') }}">Admin</a>
-          <a href="{{ url_for('admin_attendance_page') }}">Attendance</a>
+          <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('admin_employees_page') }}">Employees</a>
           <a href="{{ url_for('admin_jobs_page') }}">Jobs</a>
+          <a href="{{ url_for('admin_attendance_page') }}">Attendance</a>
+          <a href="{{ url_for('admin_approvals_page') }}">Approvals</a>
           <a href="{{ url_for('admin_reports_page') }}">Reports</a>
           <a href="{{ url_for('admin_settings_page') }}">Settings</a>
         {% endif %}

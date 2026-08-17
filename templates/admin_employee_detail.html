@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Manage Employee</h1><p>Update login, status, assigned jobs, and password for {{ employee.full_name }}.</p></div>
+<div class="grid two-col">
+  <div class="card stack gap-md">
+    <h2>Employee profile</h2>
+    <div class="grid two-col">
+      <label>Full name<input id="full_name" value="{{ employee.full_name }}"></label>
+      <label>Email / username<input id="email" value="{{ employee.email }}"></label>
+      <label>Department<input id="department" value="{{ employee.department }}"></label>
+      <label>Pay category<input id="pay_category" value="{{ employee.pay_category }}"></label>
+      <label>Xero employee ID<input id="xero_employee_id" value="{{ employee.xero_employee_id or '' }}"></label>
+      <label>Status<select id="active"><option value="true" {{ 'selected' if employee.active else '' }}>Active</option><option value="false" {{ '' if employee.active else 'selected' }}>Disabled</option></select></label>
+    </div>
+    <div class="actions-inline">
+      <button class="btn primary" onclick="saveEmployee()">Save employee</button>
+      <button class="btn secondary" onclick="toggleEmployee()">{{ 'Disable' if employee.active else 'Enable' }} employee</button>
+    </div>
+    <div id="employee-save-result" class="alert hidden"></div>
+
+    <h2>Reset password</h2>
+    <div class="actions-inline">
+      <input id="new_password" value="Pass123!" placeholder="New password">
+      <button class="btn ghost" onclick="resetPassword()">Reset password</button>
+    </div>
+    <div class="muted">Give the employee this password for their next login.</div>
+
+    <h2>Assigned jobs</h2>
+    <div class="checkbox-grid">
+      {% for job in jobs %}
+        <label class="check-chip"><input type="checkbox" class="job-check" value="{{ job.id }}" {{ 'checked' if job.id in assigned_ids else '' }}> {{ job.job_number }} · {{ job.name }}</label>
+      {% endfor %}
+    </div>
+    <button class="btn primary" onclick="saveAssignments()">Save assigned jobs</button>
+  </div>
+
+  <div class="card">
+    <h2>Recent attendance</h2>
+    <table>
+      <thead><tr><th>Date</th><th>Job</th><th>Time In</th><th>Time Out</th><th>Approval</th></tr></thead>
+      <tbody>
+      {% for row in recent_rows %}
+        <tr><td>{{ row.date }}</td><td>{{ row.job_id }}</td><td>{{ row.time_in_at|dtfmt }}</td><td>{{ row.time_out_at|dtfmt }}</td><td>{{ row.approval_status }}</td></tr>
+      {% else %}
+        <tr><td colspan="5">No attendance yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+function checkedValues(){return [...document.querySelectorAll('.job-check:checked')].map(el=>Number(el.value));}
+async function saveEmployee(){
+  const payload={
+    full_name:document.getElementById('full_name').value,
+    email:document.getElementById('email').value,
+    department:document.getElementById('department').value,
+    pay_category:document.getElementById('pay_category').value,
+    xero_employee_id:document.getElementById('xero_employee_id').value,
+    active:document.getElementById('active').value==='true'
+  };
+  const res = await fetch('/api/admin/employees/{{ employee.id }}/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await res.json();
+  const box=document.getElementById('employee-save-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+}
+async function resetPassword(){
+  const res = await fetch('/api/admin/employees/{{ employee.id }}/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('new_password').value})});
+  const data=await res.json();
+  const box=document.getElementById('employee-save-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+}
+async function toggleEmployee(){
+  const res = await fetch('/api/admin/employees/{{ employee.id }}/toggle-active',{method:'POST'});
+  const data=await res.json();
+  const box=document.getElementById('employee-save-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+  if(!data.error) setTimeout(()=>location.reload(),700);
+}
+async function saveAssignments(){
+  const res = await fetch('/api/admin/employees/{{ employee.id }}/assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_ids:checkedValues()})});
+  const data=await res.json();
+  const box=document.getElementById('employee-save-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+}
+</script>
+{% endblock %}

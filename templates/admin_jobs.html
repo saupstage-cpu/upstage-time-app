@@ -1,6 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="page-title"><h1>Job Management</h1><p>Job numbers, clients, venues and assigned work.</p></div>
+<div class="page-title"><h1>Job Management</h1><p>Create jobs and assign the right crew with one simple screen.</p></div>
+<div class="card stack gap-md">
+  <h2>Add job</h2>
+  <div class="grid three-col">
+    <label>Job number<input id="job_number" placeholder="2026-006"></label>
+    <label>Job name<input id="job_name" placeholder="Corporate Event"></label>
+    <label>Client<input id="client" placeholder="Client name"></label>
+    <label>Venue<input id="venue" placeholder="Venue"></label>
+    <label>Location<input id="location" placeholder="Sydney / Cebu / Remote"></label>
+    <label>Manager<input id="manager_name" placeholder="Manager name"></label>
+    <label>Start date<input id="start_date" type="date"></label>
+    <label>End date<input id="end_date" type="date"></label>
+    <label>Status<select id="status"><option>Active</option><option>Planned</option><option>Completed</option><option>On Hold</option></select></label>
+  </div>
+  <label>Notes<textarea id="job_notes" rows="3" placeholder="Crew notes, access notes, equipment notes"></textarea></label>
+  <label>Assign crew now</label>
+  <div class="checkbox-grid">
+    {% for employee in employees %}
+      <label class="check-chip"><input type="checkbox" class="employee-check" value="{{ employee.id }}"> {{ employee.full_name }}</label>
+    {% endfor %}
+  </div>
+  <button class="btn primary" onclick="createJob()">Create job</button>
+  <div id="job-create-result" class="alert hidden"></div>
+</div>
 <div class="grid two-col">
 {% for row in rows %}
   <div class="card">
@@ -11,8 +34,34 @@
     <div><strong>Location:</strong> {{ row.location }}</div>
     <div><strong>Manager:</strong> {{ row.manager_name }}</div>
     <div><strong>Status:</strong> {{ row.status }}</div>
+    <div><strong>Assigned crew:</strong> {{ assignment_counts[row.id] }}</div>
     <div class="muted">{{ row.notes }}</div>
+    <div class="actions-inline top-gap"><a class="btn ghost small" href="{{ url_for('admin_job_detail_page', job_id=row.id) }}">Manage job</a></div>
   </div>
 {% endfor %}
 </div>
+<script>
+function selectedEmployees(){return [...document.querySelectorAll('.employee-check:checked')].map(el=>Number(el.value));}
+async function createJob(){
+  const payload={
+    job_number:document.getElementById('job_number').value,
+    name:document.getElementById('job_name').value,
+    client:document.getElementById('client').value,
+    venue:document.getElementById('venue').value,
+    location:document.getElementById('location').value,
+    manager_name:document.getElementById('manager_name').value,
+    start_date:document.getElementById('start_date').value,
+    end_date:document.getElementById('end_date').value,
+    status:document.getElementById('status').value,
+    notes:document.getElementById('job_notes').value,
+    employee_ids:selectedEmployees()
+  };
+  const res = await fetch('/api/admin/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await res.json();
+  const box=document.getElementById('job-create-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+  if(!data.error) setTimeout(()=>location.reload(),800);
+}
+</script>
 {% endblock %}

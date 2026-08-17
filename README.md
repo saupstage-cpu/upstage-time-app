@@ -90,3 +90,6 @@ Branding update: this package now uses the uploaded official Upstage logo asset 
 
 
 Hosting update: this package is now Render-ready with a Procfile, `render.yaml`, Gunicorn startup, and dynamic `PORT` support.
+
+
+Admin upgrade: full admin screens are now included for employee creation, employee login/password management, job creation, job editing, and employee-job assignment. The employee dashboard has also been simplified into a large-button, no-brainer clocking experience.

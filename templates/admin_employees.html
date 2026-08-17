@@ -1,14 +1,67 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="page-title"><h1>Employee Management</h1><p>Create employees, disable access and maintain pay mapping.</p></div>
+<div class="page-title"><h1>Employee Management</h1><p>Create employees, set login details, assign jobs, and disable access in one place.</p></div>
+
+<div class="card stack gap-md">
+  <h2>Add employee</h2>
+  <div class="grid three-col">
+    <label>Full name<input id="new_full_name" placeholder="Christian Example"></label>
+    <label>Email / username<input id="new_email" placeholder="christian@upstageco.test"></label>
+    <label>Temporary password<input id="new_password" value="Pass123!"></label>
+    <label>Department<input id="new_department" placeholder="Events"></label>
+    <label>Pay category<input id="new_pay_category" placeholder="Ordinary Hours"></label>
+    <label>Xero employee ID<input id="new_xero_employee_id" placeholder="Optional"></label>
+  </div>
+  <label>Assign jobs now</label>
+  <div class="checkbox-grid">
+    {% for job in jobs %}
+      <label class="check-chip"><input type="checkbox" class="new-job-check" value="{{ job.id }}"> {{ job.job_number }} · {{ job.name }}</label>
+    {% endfor %}
+  </div>
+  <div class="actions-inline">
+    <button class="btn primary" onclick="createEmployee()">Create employee login</button>
+    <div class="muted">Simple default password is set first, then you can reset it from the employee profile.</div>
+  </div>
+  <div id="employee-create-result" class="alert hidden"></div>
+</div>
+
 <div class="card">
+  <h2>Current employees</h2>
   <table>
-    <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Pay Category</th><th>Status</th><th>Xero Employee ID</th></tr></thead>
+    <thead><tr><th>Name</th><th>Login</th><th>Department</th><th>Assigned Jobs</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
     {% for row in rows %}
-      <tr><td>{{ row.full_name }}</td><td>{{ row.email }}</td><td>{{ row.department }}</td><td>{{ row.pay_category }}</td><td>{{ 'Active' if row.active else 'Disabled' }}</td><td>{{ row.xero_employee_id or '-' }}</td></tr>
+      <tr>
+        <td><strong>{{ row.full_name }}</strong><div class="muted">{{ row.pay_category }}</div></td>
+        <td>{{ row.email }}</td>
+        <td>{{ row.department }}</td>
+        <td>{{ assignment_counts[row.id] }}</td>
+        <td>{{ 'Active' if row.active else 'Disabled' }}</td>
+        <td><a class="btn ghost small" href="{{ url_for('admin_employee_detail_page', user_id=row.id) }}">Manage employee</a></td>
+      </tr>
     {% endfor %}
     </tbody>
   </table>
 </div>
+
+<script>
+function getCheckedValues(selector){return [...document.querySelectorAll(selector+':checked')].map(el=>Number(el.value));}
+async function createEmployee(){
+  const payload = {
+    full_name: document.getElementById('new_full_name').value,
+    email: document.getElementById('new_email').value,
+    password: document.getElementById('new_password').value,
+    department: document.getElementById('new_department').value,
+    pay_category: document.getElementById('new_pay_category').value,
+    xero_employee_id: document.getElementById('new_xero_employee_id').value,
+    job_ids: getCheckedValues('.new-job-check')
+  };
+  const res = await fetch('/api/admin/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data = await res.json();
+  const box=document.getElementById('employee-create-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+  if(!data.error) setTimeout(()=>location.reload(),800);
+}
+</script>
 {% endblock %}
