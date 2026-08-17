@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>API Documentation</h1><p>Core REST endpoints used by the mobile app and admin dashboard.</p></div>
+<div class="card prose">
+  <h2>Authentication</h2>
+  <ul><li>POST /login — secure session login</li><li>GET /api/session — current user session</li></ul>
+  <h2>Employee attendance</h2>
+  <ul>
+    <li>GET /api/jobs/my</li>
+    <li>GET /api/employee/dashboard</li>
+    <li>POST /api/attendance/time-in</li>
+    <li>POST /api/attendance/start-break</li>
+    <li>POST /api/attendance/end-break</li>
+    <li>POST /api/attendance/time-out</li>
+    <li>POST /api/worklogs</li>
+    <li>GET /api/employee/history</li>
+    <li>POST /api/timesheet/submit</li>
+  </ul>
+  <h2>Admin</h2>
+  <ul>
+    <li>GET /api/admin/dashboard</li>
+    <li>POST /api/admin/employees</li>
+    <li>POST /api/admin/attendance/&lt;id&gt;/approve</li>
+    <li>POST /api/admin/attendance/&lt;id&gt;/reject</li>
+    <li>POST /api/admin/attendance/&lt;id&gt;/correct</li>
+    <li>POST /api/admin/timesheets/&lt;id&gt;/review</li>
+    <li>GET /api/admin/reports.csv</li>
+    <li>GET /api/admin/reports.pdf</li>
+    <li>POST /api/admin/xero/sync</li>
+    <li>POST /api/admin/settings</li>
+    <li>POST /api/admin/manual-entry</li>
+  </ul>
+</div>
+{% endblock %}

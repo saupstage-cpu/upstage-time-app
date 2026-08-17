@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Employee Management</h1><p>Create employees, disable access and maintain pay mapping.</p></div>
+<div class="card">
+  <table>
+    <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Pay Category</th><th>Status</th><th>Xero Employee ID</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr><td>{{ row.full_name }}</td><td>{{ row.email }}</td><td>{{ row.department }}</td><td>{{ row.pay_category }}</td><td>{{ 'Active' if row.active else 'Disabled' }}</td><td>{{ row.xero_employee_id or '-' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

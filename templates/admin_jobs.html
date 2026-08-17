@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Job Management</h1><p>Job numbers, clients, venues and assigned work.</p></div>
+<div class="grid two-col">
+{% for row in rows %}
+  <div class="card">
+    <div class="eyebrow">{{ row.job_number }}</div>
+    <h2>{{ row.name }}</h2>
+    <div><strong>Client:</strong> {{ row.client }}</div>
+    <div><strong>Venue:</strong> {{ row.venue }}</div>
+    <div><strong>Location:</strong> {{ row.location }}</div>
+    <div><strong>Manager:</strong> {{ row.manager_name }}</div>
+    <div><strong>Status:</strong> {{ row.status }}</div>
+    <div class="muted">{{ row.notes }}</div>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

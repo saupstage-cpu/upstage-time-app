@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Admin Dashboard</h1><p>Live attendance, exceptions and job visibility for Upstage Co.</p></div>
+<section class="stats-grid">
+  <div class="stat-card"><span>Employees Working</span><strong>{{ metrics.working }}</strong></div>
+  <div class="stat-card"><span>On Break</span><strong>{{ metrics.on_break }}</strong></div>
+  <div class="stat-card"><span>Not Clocked In</span><strong>{{ metrics.not_clocked }}</strong></div>
+  <div class="stat-card"><span>Clocked Out</span><strong>{{ metrics.clocked_out }}</strong></div>
+  <div class="stat-card"><span>Late</span><strong>{{ metrics.late }}</strong></div>
+  <div class="stat-card"><span>Missing Time Out</span><strong>{{ metrics.missing_time_out }}</strong></div>
+</section>
+<section class="card">
+  <h2>Live employee status</h2>
+  <table>
+    <thead><tr><th>Employee</th><th>Status</th><th>Job</th><th>Time In</th><th>Location</th></tr></thead>
+    <tbody>
+    {% for shift in live %}
+      <tr>
+        <td>{{ users.query.get(shift.user_id).full_name }}</td>
+        <td>{{ shift.status }}</td>
+        <td>{{ jobs.query.get(shift.job_id).name }}</td>
+        <td>{{ shift.time_in_at|dtfmt }}</td>
+        <td>{{ shift.time_in_address }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">No employees currently clocked in.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

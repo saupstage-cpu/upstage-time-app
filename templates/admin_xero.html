@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Xero Integration</h1><p>Connect via official OAuth 2.0 and sync approved timesheets.</p></div>
+<div class="card stack gap-md">
+  <div class="grid two-col">
+    <div>
+      <h2>Connection</h2>
+      <div class="status-pill yellow">Not Connected</div>
+      <p>Provide client ID, client secret, redirect URI and Xero payroll scopes. Do not store Xero passwords.</p>
+      <button class="btn primary" onclick="runXeroSync()">Sync approved timesheets</button>
+      <div id="xero-result" class="alert hidden"></div>
+    </div>
+    <div>
+      <h2>Supported mapping</h2>
+      <ul>
+        <li>Employee in app → Employee in Xero</li>
+        <li>Ordinary hours / overtime / leave categories</li>
+        <li>Break deductions and approved week periods</li>
+        <li>Sync history and audit log</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <h2>Sync history</h2>
+  <table>
+    <thead><tr><th>Week</th><th>Status</th><th>Synced At</th><th>Payload</th></tr></thead>
+    <tbody>
+    {% for row in logs %}
+      <tr><td>{{ row.timesheet_week }}</td><td>{{ row.status }}</td><td>{{ row.synced_at|dtfmt }}</td><td><code>{{ row.response_json }}</code></td></tr>
+    {% else %}
+      <tr><td colspan="4">No sync attempts yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<script>
+async function runXeroSync(){
+  const res = await fetch('/api/admin/xero/sync',{method:'POST'});
+  const data = await res.json();
+  const box=document.getElementById('xero-result');
+  box.className='alert success'; box.textContent=`${data.message} (${data.status})`;
+  setTimeout(()=>location.reload(), 700);
+}
+</script>
+{% endblock %}

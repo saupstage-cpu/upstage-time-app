@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Privacy & Permissions</h1><p>Clear employee-facing disclosure for photo, location and attendance data.</p></div>
+<div class="card prose">
+  <h2>What this app collects</h2>
+  <ul>
+    <li>Selfie/photo for Time In and Time Out</li>
+    <li>GPS latitude/longitude and a readable job location at attendance events</li>
+    <li>Attendance actions, breaks, work logs and job notes</li>
+    <li>Device metadata where legally appropriate</li>
+  </ul>
+  <h2>What this app does not do by default</h2>
+  <p>It does not continuously track employees in the background. Location capture is limited to Time In, Start Break, End Break and Time Out, unless the company explicitly enables extra job-site tracking.</p>
+  <h2>Retention</h2>
+  <p>Admin-configured retention period: {{ settings.retention_days if settings else 365 }} days.</p>
+  <h2>Consent</h2>
+  <p>Employees should acknowledge camera and location permissions during onboarding and understand that approved attendance records become locked from employee edits.</p>
+</div>
+{% endblock %}
