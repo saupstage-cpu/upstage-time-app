@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login · Upstage Time</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <img class="login-logo" src="{{ url_for('static', filename=(company_settings.logo_path if company_settings and company_settings.logo_path else 'branding/upstage-logo.png')) }}" alt="Company logo">
+    <h1>{{ company_settings.company_name if company_settings else 'Upstage Time' }}</h1>
+    <p>Production-ready demo for mobile time, attendance, location and job tracking.</p>
+    {% if error %}<div class="alert danger">{{ error }}</div>{% endif %}
+    <form method="post" class="stack gap-md">
+      <label>Email<input type="email" name="email" placeholder="admin@upstageco.test" required></label>
+      <label>Password<input type="password" name="password" placeholder="••••••••" required></label>
+      <button class="btn primary" type="submit">Secure Login</button>
+    </form>
+    <div class="demo-box">
+      <strong>Demo accounts</strong>
+      <div>Admin: admin@upstageco.test / Admin123!</div>
+      <div>Employee: alex@upstageco.test / Pass123!</div>
+    </div>
+    <a href="{{ url_for('privacy_page') }}">Privacy / permissions</a>
+  </div>
+</body>
+</html>

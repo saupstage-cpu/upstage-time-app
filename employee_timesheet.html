@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Timesheet</h1><p>Weekly hours, breaks and approval status.</p></div>
+<div class="card">
+  <table>
+    <thead><tr><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Net</th><th>Approval</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr><td>{{ row.date }}</td><td>{{ row.time_in_at|dtfmt }}</td><td>{{ row.time_out_at|dtfmt }}</td><td>{{ row.total_break_minutes }}m</td><td>{{ row.net_minutes }}m</td><td>{{ row.approval_status }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button class="btn primary" onclick="submitTimesheet()">Submit weekly timesheet</button>
+  <div id="timesheet-result" class="alert hidden"></div>
+</div>
+<div class="card">
+  <h2>Approval workflow history</h2>
+  {% for row in approvals %}
+    <div class="log-row"><strong>{{ row.week_start }} → {{ row.week_end }}</strong><div>Status: {{ row.status }}</div><div class="muted">{{ row.note }}</div></div>
+  {% else %}
+    <div class="muted">No submissions yet.</div>
+  {% endfor %}
+</div>
+<script>
+async function submitTimesheet(){
+  const res = await fetch('/api/timesheet/submit',{method:'POST'});
+  const data = await res.json();
+  const box=document.getElementById('timesheet-result');
+  box.className='alert success'; box.textContent=data.message || data.error;
+}
+</script>
+{% endblock %}

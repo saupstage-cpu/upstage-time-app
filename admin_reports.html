@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Reports</h1><p>Daily, weekly and payroll-ready exports.</p></div>
+<div class="card stack gap-md">
+  <div class="actions-inline">
+    <a class="btn primary" href="/api/admin/reports.csv">Export CSV</a>
+    <a class="btn secondary" href="/api/admin/reports.pdf">Export PDF</a>
+    <a class="btn ghost" href="{{ url_for('admin_xero_page') }}">Open Xero Integration</a>
+  </div>
+  <table>
+    <thead><tr><th>Date</th><th>Employee</th><th>Job</th><th>Break</th><th>Net</th><th>Approval</th><th>Flags</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.date }}</td>
+        <td>{{ row.user_id }}</td>
+        <td>{{ row.job_id }}</td>
+        <td>{{ row.total_break_minutes }}m</td>
+        <td>{{ row.net_minutes }}m</td>
+        <td>{{ row.approval_status }}</td>
+        <td>{% if row.offline_time_in or row.offline_time_out %}Offline{% endif %} {% if row.edited_after_approval %}Edited after approval{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

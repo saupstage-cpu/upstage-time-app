@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Manage Job</h1><p>Edit details and assign crew for {{ job.name }}.</p></div>
+<div class="grid two-col">
+  <div class="card stack gap-md">
+    <h2>Job details</h2>
+    <div class="grid two-col">
+      <label>Job number<input id="job_number" value="{{ job.job_number }}"></label>
+      <label>Job name<input id="name" value="{{ job.name }}"></label>
+      <label>Client<input id="client" value="{{ job.client }}"></label>
+      <label>Venue<input id="venue" value="{{ job.venue }}"></label>
+      <label>Location<input id="location" value="{{ job.location }}"></label>
+      <label>Manager<input id="manager_name" value="{{ job.manager_name }}"></label>
+      <label>Start date<input id="start_date" type="date" value="{{ job.start_date }}"></label>
+      <label>End date<input id="end_date" type="date" value="{{ job.end_date }}"></label>
+      <label>Status<select id="status"><option {{ 'selected' if job.status=='Active' else '' }}>Active</option><option {{ 'selected' if job.status=='Planned' else '' }}>Planned</option><option {{ 'selected' if job.status=='Completed' else '' }}>Completed</option><option {{ 'selected' if job.status=='On Hold' else '' }}>On Hold</option></select></label>
+    </div>
+    <label>Notes<textarea id="notes" rows="4">{{ job.notes }}</textarea></label>
+    <button class="btn primary" onclick="saveJob()">Save job</button>
+
+    <h2>Assigned crew</h2>
+    <div class="checkbox-grid">
+      {% for employee in employees %}
+        <label class="check-chip"><input type="checkbox" class="crew-check" value="{{ employee.id }}" {{ 'checked' if employee.id in assigned_ids else '' }}> {{ employee.full_name }}</label>
+      {% endfor %}
+    </div>
+    <button class="btn primary" onclick="saveCrew()">Save assigned crew</button>
+    <div id="job-save-result" class="alert hidden"></div>
+  </div>
+  <div class="card">
+    <h2>Recent attendance on this job</h2>
+    <table>
+      <thead><tr><th>Date</th><th>Employee</th><th>Time In</th><th>Time Out</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for row in recent_rows %}
+        <tr><td>{{ row.date }}</td><td>{{ users.query.get(row.user_id).full_name }}</td><td>{{ row.time_in_at|dtfmt }}</td><td>{{ row.time_out_at|dtfmt }}</td><td>{{ row.approval_status }}</td></tr>
+      {% else %}
+        <tr><td colspan="5">No attendance on this job yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+function selectedCrew(){return [...document.querySelectorAll('.crew-check:checked')].map(el=>Number(el.value));}
+async function saveJob(){
+  const payload={
+    job_number:document.getElementById('job_number').value,
+    name:document.getElementById('name').value,
+    client:document.getElementById('client').value,
+    venue:document.getElementById('venue').value,
+    location:document.getElementById('location').value,
+    manager_name:document.getElementById('manager_name').value,
+    start_date:document.getElementById('start_date').value,
+    end_date:document.getElementById('end_date').value,
+    status:document.getElementById('status').value,
+    notes:document.getElementById('notes').value
+  };
+  const res = await fetch('/api/admin/jobs/{{ job.id }}/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await res.json();
+  const box=document.getElementById('job-save-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+}
+async function saveCrew(){
+  const res = await fetch('/api/admin/jobs/{{ job.id }}/assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_ids:selectedCrew()})});
+  const data=await res.json();
+  const box=document.getElementById('job-save-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+}
+</script>
+{% endblock %}

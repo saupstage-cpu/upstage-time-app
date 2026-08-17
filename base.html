@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ title or 'Upstage Time' }}</title>
+  <meta name="theme-color" content="{{ company_settings.primary_color if company_settings else '#2563eb' }}">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename=(company_settings.logo_path if company_settings and company_settings.logo_path else 'branding/apple-touch-icon.png')) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>:root{--primary: {{ company_settings.primary_color if company_settings else '#2563eb' }}; --secondary: {{ company_settings.secondary_color if company_settings else '#0ea5a4' }};}</style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="brand-row">
+        <img class="brand-logo" src="{{ url_for('static', filename=(company_settings.logo_path if company_settings and company_settings.logo_path else 'branding/upstage-logo.png')) }}" alt="Company logo">
+        <div>
+          <div class="brand">{{ company_settings.company_name if company_settings else 'Upstage Time' }}</div>
+          <div class="subtitle">Employee attendance, jobs and payroll tracking</div>
+        </div>
+      </div>
+    </div>
+    <nav class="navlinks">
+      {% if session.get('user_id') %}
+        {% if current_user().role == 'employee' %}
+          <a href="{{ url_for('employee_dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('employee_history_page') }}">History</a>
+          <a href="{{ url_for('employee_timesheet_page') }}">Timesheet</a>
+        {% else %}
+          <a href="{{ url_for('admin_dashboard') }}">Admin Home</a>
+          <a href="{{ url_for('admin_employees_page') }}">Manage Employees</a>
+          <a href="{{ url_for('admin_jobs_page') }}">Manage Jobs</a>
+          <a href="{{ url_for('admin_attendance_page') }}">Attendance</a>
+          <a href="{{ url_for('admin_approvals_page') }}">Approvals</a>
+          <a href="{{ url_for('admin_reports_page') }}">Reports</a>
+          <a href="{{ url_for('admin_settings_page') }}">Settings</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Today's Attendance</h1><p>Photo + time + location + job in one view.</p></div>
+<div class="stack gap-md">
+{% for row in rows %}
+  {% set data = serialize(row) %}
+  <div class="card attendance-card">
+    <div class="attendance-header">
+      <div>
+        <h2>{{ data.employee }} · {{ data.job }}</h2>
+        <div>{{ data.date }} · {{ data.approval_status }} · Geofence: {{ data.geofence_status }}</div>
+      </div>
+      <div class="actions-inline">
+        <button class="btn ghost" onclick="reviewAttendance({{ row.id }}, 'approved')">Approve</button>
+        <button class="btn ghost" onclick="reviewAttendance({{ row.id }}, 'rejected')">Reject</button>
+      </div>
+    </div>
+    <div class="grid three-col">
+      <div>
+        <div class="media-frame">{% if data.time_in_photo %}<img src="{{ data.time_in_photo }}" alt="time in photo">{% endif %}</div>
+        <strong>Time In</strong>
+        <div>{{ data.time_in }}</div>
+        <div class="muted">{{ data.time_in_address }}</div>
+      </div>
+      <div>
+        <div class="media-frame">{% if data.time_out_photo %}<img src="{{ data.time_out_photo }}" alt="time out photo">{% endif %}</div>
+        <strong>Time Out</strong>
+        <div>{{ data.time_out }}</div>
+        <div class="muted">{{ data.time_out_address }}</div>
+      </div>
+      <div>
+        <strong>Breaks</strong>
+        {% for b in data.breaks %}
+          <div class="log-row">{{ b.start }} → {{ b.end }} ({{ b.minutes }}m)</div>
+        {% else %}
+          <div class="muted">No breaks</div>
+        {% endfor %}
+        <div class="divider"></div>
+        <div><strong>Net Hours:</strong> {{ data.net_minutes // 60 }}h {{ data.net_minutes % 60 }}m</div>
+        <div><strong>Work summary:</strong> {{ data.summary or '-' }}</div>
+        {% if data.time_in_lat and data.time_in_lng %}<a target="_blank" href="https://maps.google.com/?q={{ data.time_in_lat }},{{ data.time_in_lng }}">Open map</a>{% endif %}
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+<script>
+async function reviewAttendance(id,status){
+  const route = status === 'approved' ? 'approve' : 'reject';
+  await fetch(`/api/admin/attendance/${id}/${route}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({note:status})});
+  location.reload();
+}
+</script>
+{% endblock %}

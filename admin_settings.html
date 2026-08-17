@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Company Settings</h1><p>Update logo, colours, break rules and approved regions. The save button is at the bottom of this page.</p></div>
+<div class="card stack gap-md">
+  <div class="actions-inline admin-top-actions">
+    <a class="btn ghost" href="{{ url_for('admin_dashboard') }}">← Back to Admin Home</a>
+    <a class="btn secondary" href="{{ url_for('admin_employees_page') }}">Manage Employees</a>
+    <a class="btn secondary" href="{{ url_for('admin_jobs_page') }}">Manage Jobs</a>
+  </div>
+  <div class="grid two-col">
+    <label>Company name<input id="company_name" value="{{ settings.company_name }}"></label>
+    <label>Timezone<input id="timezone" value="{{ settings.timezone }}"></label>
+    <label>Primary color<input id="primary_color" value="{{ settings.primary_color }}"></label>
+    <label>Secondary color<input id="secondary_color" value="{{ settings.secondary_color }}"></label>
+    <label>Paid break minutes<input id="paid_break_minutes" type="number" value="{{ settings.paid_break_minutes }}"></label>
+    <label>Unpaid break minutes<input id="unpaid_break_minutes" type="number" value="{{ settings.unpaid_break_minutes }}"></label>
+    <label>Geofence name<input id="geofence_name" value="{{ settings.geofence_name }}"></label>
+    <label>Geofence radius metres<input id="geofence_radius_m" type="number" value="{{ settings.geofence_radius_m }}"></label>
+  </div>
+  <div class="card inner-card stack gap-sm">
+    <h2>Company logo</h2>
+    <img class="logo-preview" src="{{ url_for('static', filename=settings.logo_path) if settings.logo_path else url_for('static', filename='branding/upstage-logo.png') }}" alt="Current logo">
+    <input id="logo_file" type="file" accept="image/*">
+    <button class="btn secondary" onclick="uploadLogo()">Upload logo</button>
+  </div>
+  <div class="card inner-card stack gap-sm">
+    <h2>Approved GPS regions</h2>
+    <div class="muted">Country-wide allowlist enabled for anywhere in Australia and anywhere in the Philippines, including Cebu.</div>
+    {% for site in sites %}
+      <div class="log-row">
+        <strong>{{ site.name }}</strong>
+        <div>{{ site.city }}, {{ site.country }} · Radius {{ site.radius_m }}m</div>
+        <div class="muted">Timezone: {{ site.timezone_name }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  <button class="btn primary" onclick="saveSettings()">Save settings</button>
+  <div id="settings-result" class="alert hidden"></div>
+</div>
+<script>
+async function saveSettings(){
+  const payload={
+    company_name:document.getElementById('company_name').value,
+    timezone:document.getElementById('timezone').value,
+    primary_color:document.getElementById('primary_color').value,
+    secondary_color:document.getElementById('secondary_color').value,
+    paid_break_minutes:Number(document.getElementById('paid_break_minutes').value),
+    unpaid_break_minutes:Number(document.getElementById('unpaid_break_minutes').value),
+    geofence_name:document.getElementById('geofence_name').value,
+    geofence_radius_m:Number(document.getElementById('geofence_radius_m').value)
+  };
+  const res = await fetch('/api/admin/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await res.json();
+  const box=document.getElementById('settings-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=(data.message || data.error) + (data.error ? '' : ' Refresh the page to see brand changes everywhere.');
+}
+async function uploadLogo(){
+  const file = document.getElementById('logo_file').files[0];
+  if(!file) return;
+  const fd = new FormData(); fd.append('logo', file);
+  const res = await fetch('/api/admin/logo-upload',{method:'POST',body:fd});
+  const data = await res.json();
+  const box=document.getElementById('settings-result');
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=data.message || data.error;
+  if(data.logo_url){ document.querySelector('.logo-preview').src = data.logo_url; }
+}
+</script>
+{% endblock %}

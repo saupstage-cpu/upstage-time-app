@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title"><h1>Timesheet Approval</h1><p>Approve, reject or request correction.</p></div>
+<div class="stack gap-md">
+{% for row in rows %}
+  <div class="card">
+    <div class="attendance-header">
+      <div>
+        <h2>{{ users.query.get(row.user_id).full_name }}</h2>
+        <div>{{ row.week_start }} → {{ row.week_end }} · {{ row.status }}</div>
+      </div>
+      <div class="actions-inline">
+        <button class="btn ghost" onclick="reviewTs({{ row.id }}, 'approved')">Approve</button>
+        <button class="btn ghost" onclick="reviewTs({{ row.id }}, 'rejected')">Reject</button>
+        <button class="btn secondary" onclick="reviewTs({{ row.id }}, 'correction_requested')">Request correction</button>
+      </div>
+    </div>
+    <div class="muted">{{ row.note }}</div>
+  </div>
+{% endfor %}
+</div>
+<script>
+async function reviewTs(id,status){
+  await fetch(`/api/admin/timesheets/${id}/review`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, note:status})});
+  location.reload();
+}
+</script>
+{% endblock %}
