@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="page-title"><h1>Company Settings</h1><p>Attendance rules, geofence, breaks, overtime and privacy retention.</p></div>
+<div class="page-title"><h1>Company Settings</h1><p>Update logo, colours, break rules and approved regions. The save button is at the bottom of this page.</p></div>
 <div class="card stack gap-md">
+  <div class="actions-inline admin-top-actions">
+    <a class="btn ghost" href="{{ url_for('admin_dashboard') }}">← Back to Admin Home</a>
+    <a class="btn secondary" href="{{ url_for('admin_employees_page') }}">Manage Employees</a>
+    <a class="btn secondary" href="{{ url_for('admin_jobs_page') }}">Manage Jobs</a>
+  </div>
   <div class="grid two-col">
     <label>Company name<input id="company_name" value="{{ settings.company_name }}"></label>
     <label>Timezone<input id="timezone" value="{{ settings.timezone }}"></label>
@@ -20,7 +25,7 @@
   </div>
   <div class="card inner-card stack gap-sm">
     <h2>Approved GPS regions</h2>
-    <div class="muted">Country-wide allowlist enabled for anywhere in Australia and anywhere in the Philippines, including Cebu. Specific sites below remain available for named reporting.</div>
+    <div class="muted">Country-wide allowlist enabled for anywhere in Australia and anywhere in the Philippines, including Cebu.</div>
     {% for site in sites %}
       <div class="log-row">
         <strong>{{ site.name }}</strong>
@@ -47,7 +52,8 @@ async function saveSettings(){
   const res = await fetch('/api/admin/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await res.json();
   const box=document.getElementById('settings-result');
-  box.className='alert success'; box.textContent=data.message + ' Refresh page to see brand colors everywhere.';
+  box.className='alert ' + (data.error ? 'danger' : 'success');
+  box.textContent=(data.message || data.error) + (data.error ? '' : ' Refresh the page to see brand changes everywhere.');
 }
 async function uploadLogo(){
   const file = document.getElementById('logo_file').files[0];

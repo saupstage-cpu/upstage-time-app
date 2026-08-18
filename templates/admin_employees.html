@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="page-title"><h1>Employee Management</h1><p>Create employees, set login details, assign jobs, and disable access in one place.</p></div>
-
+<div class="page-title"><h1>Manage Employees</h1><p>Add employee logins, reset passwords, disable access, and assign jobs from this page.</p></div>
 <div class="card stack gap-md">
+  <div class="actions-inline admin-top-actions">
+    <a class="btn ghost" href="{{ url_for('admin_dashboard') }}">← Back to Admin Home</a>
+    <a class="btn secondary" href="{{ url_for('admin_jobs_page') }}">Go to Manage Jobs</a>
+  </div>
   <h2>Add employee</h2>
   <div class="grid three-col">
     <label>Full name<input id="new_full_name" placeholder="Christian Example"></label>
@@ -20,13 +23,16 @@
   </div>
   <div class="actions-inline">
     <button class="btn primary" onclick="createEmployee()">Create employee login</button>
-    <div class="muted">Simple default password is set first, then you can reset it from the employee profile.</div>
+    <div class="muted">Use the Manage button below to edit the employee later.</div>
   </div>
   <div id="employee-create-result" class="alert hidden"></div>
 </div>
 
 <div class="card">
-  <h2>Current employees</h2>
+  <div class="section-header">
+    <h2>Current employees</h2>
+    <div class="muted">Click <strong>Manage</strong> on any employee to edit their login, password and assigned jobs.</div>
+  </div>
   <table>
     <thead><tr><th>Name</th><th>Login</th><th>Department</th><th>Assigned Jobs</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
@@ -37,7 +43,7 @@
         <td>{{ row.department }}</td>
         <td>{{ assignment_counts[row.id] }}</td>
         <td>{{ 'Active' if row.active else 'Disabled' }}</td>
-        <td><a class="btn ghost small" href="{{ url_for('admin_employee_detail_page', user_id=row.id) }}">Manage employee</a></td>
+        <td><a class="btn primary small" href="{{ url_for('admin_employee_detail_page', user_id=row.id) }}">Manage</a></td>
       </tr>
     {% endfor %}
     </tbody>

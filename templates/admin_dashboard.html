@@ -1,13 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="page-title"><h1>Admin Dashboard</h1><p>Live attendance, exceptions and job visibility for Upstage Co.</p></div>
-<section class="stats-grid">
+<div class="page-title"><h1>Admin Dashboard</h1><p>Everything important is here. Use the big buttons below to manage staff, jobs, attendance and settings.</p></div>
+<section class="grid two-col admin-quick-grid">
+  <a class="card quick-link-card" href="{{ url_for('admin_employees_page') }}"><div class="eyebrow">Step 1</div><h2>Manage Employees</h2><p>Create employee logins, reset passwords, disable access, assign jobs.</p></a>
+  <a class="card quick-link-card" href="{{ url_for('admin_jobs_page') }}"><div class="eyebrow">Step 2</div><h2>Manage Jobs</h2><p>Create jobs, edit job details, assign crew, update manager and venue.</p></a>
+  <a class="card quick-link-card" href="{{ url_for('admin_attendance_page') }}"><div class="eyebrow">Step 3</div><h2>Attendance</h2><p>Review time in/out, locations, photos, breaks and manual corrections.</p></a>
+  <a class="card quick-link-card" href="{{ url_for('admin_approvals_page') }}"><div class="eyebrow">Step 4</div><h2>Approve Timesheets</h2><p>Approve, reject or request corrections before payroll.</p></a>
+</section>
+<section class="stats-grid top-gap-lg">
   <div class="stat-card"><span>Employees Working</span><strong>{{ metrics.working }}</strong></div>
   <div class="stat-card"><span>On Break</span><strong>{{ metrics.on_break }}</strong></div>
   <div class="stat-card"><span>Not Clocked In</span><strong>{{ metrics.not_clocked }}</strong></div>
   <div class="stat-card"><span>Clocked Out</span><strong>{{ metrics.clocked_out }}</strong></div>
   <div class="stat-card"><span>Late</span><strong>{{ metrics.late }}</strong></div>
   <div class="stat-card"><span>Missing Time Out</span><strong>{{ metrics.missing_time_out }}</strong></div>
+</section>
+<section class="card stack gap-md">
+  <h2>How to use the admin side</h2>
+  <div class="simple-steps dark-steps">
+    <div class="step-chip dark-chip">1. Open Manage Employees</div>
+    <div class="step-chip dark-chip">2. Create or edit login</div>
+    <div class="step-chip dark-chip">3. Open Manage Jobs</div>
+    <div class="step-chip dark-chip">4. Assign crew</div>
+    <div class="step-chip dark-chip">5. Review attendance</div>
+  </div>
 </section>
 <section class="card">
   <h2>Live employee status</h2>

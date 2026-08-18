@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="page-title"><h1>Job Management</h1><p>Create jobs and assign the right crew with one simple screen.</p></div>
+<div class="page-title"><h1>Manage Jobs</h1><p>Create jobs, edit details and assign crew. Every job card below has a big Manage button.</p></div>
 <div class="card stack gap-md">
+  <div class="actions-inline admin-top-actions">
+    <a class="btn ghost" href="{{ url_for('admin_dashboard') }}">← Back to Admin Home</a>
+    <a class="btn secondary" href="{{ url_for('admin_employees_page') }}">Go to Manage Employees</a>
+  </div>
   <h2>Add job</h2>
   <div class="grid three-col">
     <label>Job number<input id="job_number" placeholder="2026-006"></label>
@@ -26,7 +30,7 @@
 </div>
 <div class="grid two-col">
 {% for row in rows %}
-  <div class="card">
+  <div class="card job-manage-card">
     <div class="eyebrow">{{ row.job_number }}</div>
     <h2>{{ row.name }}</h2>
     <div><strong>Client:</strong> {{ row.client }}</div>
@@ -36,13 +40,18 @@
     <div><strong>Status:</strong> {{ row.status }}</div>
     <div><strong>Assigned crew:</strong> {{ assignment_counts[row.id] }}</div>
     <div class="muted">{{ row.notes }}</div>
-    <div class="actions-inline top-gap"><a class="btn ghost small" href="{{ url_for('admin_job_detail_page', job_id=row.id) }}">Manage job</a></div>
+    <div class="actions-inline top-gap-lg">
+      <a class="btn primary" href="{{ url_for('admin_job_detail_page', job_id=row.id) }}">Manage Job</a>
+    </div>
   </div>
 {% endfor %}
 </div>
 <script>
 function selectedEmployees(){return [...document.querySelectorAll('.employee-check:checked')].map(el=>Number(el.value));}
 async function createJob(){
+  const startDate=document.getElementById('start_date').value;
+  const endDate=document.getElementById('end_date').value;
+  const today=new Date().toISOString().slice(0,10);
   const payload={
     job_number:document.getElementById('job_number').value,
     name:document.getElementById('job_name').value,
@@ -50,8 +59,8 @@ async function createJob(){
     venue:document.getElementById('venue').value,
     location:document.getElementById('location').value,
     manager_name:document.getElementById('manager_name').value,
-    start_date:document.getElementById('start_date').value,
-    end_date:document.getElementById('end_date').value,
+    start_date:startDate || today,
+    end_date:endDate || startDate || today,
     status:document.getElementById('status').value,
     notes:document.getElementById('job_notes').value,
     employee_ids:selectedEmployees()
